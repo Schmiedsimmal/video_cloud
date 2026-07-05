@@ -13,7 +13,7 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - DATA_DIR=/app/data
-    restart: unless-stopped
+    restart: always
 
 volumes:
   video-data:
