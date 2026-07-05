@@ -1,33 +1,38 @@
 import { useState, useEffect, useCallback } from 'react';
+import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import Header from './components/Header.jsx';
 import VideoGrid from './components/VideoGrid.jsx';
 import UploadModal from './components/UploadModal.jsx';
 import VideoPlayer from './components/VideoPlayer.jsx';
 import EmptyState from './components/EmptyState.jsx';
-import { CloudUpload, Film } from 'lucide-react';
+import LoginPage from './components/LoginPage.jsx';
+import UserManagement from './components/UserManagement.jsx';
+import { Film, Loader2 } from 'lucide-react';
 
-export default function App() {
+function AppContent() {
+  const { user, loading, authFetch, getMediaUrl, logout, isAdmin } = useAuth();
   const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [videoLoading, setVideoLoading] = useState(true);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [playingVideo, setPlayingVideo] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [userMgmtOpen, setUserMgmtOpen] = useState(false);
 
   const fetchVideos = useCallback(async () => {
     try {
-      const res = await fetch('/api/videos');
+      const res = await authFetch('/api/videos');
       const data = await res.json();
       setVideos(data);
     } catch (err) {
       console.error('Failed to fetch videos:', err);
     } finally {
-      setLoading(false);
+      setVideoLoading(false);
     }
-  }, []);
+  }, [authFetch]);
 
   useEffect(() => {
-    fetchVideos();
-  }, [fetchVideos]);
+    if (user) fetchVideos();
+  }, [user, fetchVideos]);
 
   const handleUpload = async (file, title, description) => {
     const formData = new FormData();
@@ -57,13 +62,14 @@ export default function App() {
         reject(new Error('Upload failed'));
       });
       xhr.open('POST', '/api/videos');
+      xhr.setRequestHeader('Authorization', `Bearer ${localStorage.getItem('vc_token')}`);
       xhr.send(formData);
     });
   };
 
   const handleDelete = async (id) => {
     try {
-      await fetch(`/api/videos/${id}`, { method: 'DELETE' });
+      await authFetch(`/api/videos/${id}`, { method: 'DELETE' });
       setVideos((prev) => prev.filter((v) => v.id !== id));
       setPlayingVideo(null);
     } catch (err) {
@@ -73,7 +79,7 @@ export default function App() {
 
   const handleUpdate = async (id, data) => {
     try {
-      const res = await fetch(`/api/videos/${id}`, {
+      const res = await authFetch(`/api/videos/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -85,15 +91,31 @@ export default function App() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
   return (
     <div className="min-h-screen bg-gray-950">
       <Header
+        user={user}
         videoCount={videos.length}
+        isAdmin={isAdmin}
         onUploadClick={() => setUploadOpen(true)}
+        onUserMgmtClick={() => setUserMgmtOpen(true)}
+        onLogout={logout}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {loading ? (
+        {videoLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="rounded-xl overflow-hidden bg-gray-900 border border-gray-800">
@@ -106,13 +128,15 @@ export default function App() {
             ))}
           </div>
         ) : videos.length === 0 ? (
-          <EmptyState onUpload={() => setUploadOpen(true)} />
+          <EmptyState onUpload={isAdmin ? () => setUploadOpen(true) : null} />
         ) : (
           <VideoGrid
             videos={videos}
             onPlay={setPlayingVideo}
             onDelete={handleDelete}
             onEdit={handleUpdate}
+            getMediaUrl={getMediaUrl}
+            isAdmin={isAdmin}
           />
         )}
       </main>
@@ -130,18 +154,32 @@ export default function App() {
           video={playingVideo}
           onClose={() => setPlayingVideo(null)}
           onDelete={handleDelete}
+          getMediaUrl={getMediaUrl}
+          isAdmin={isAdmin}
         />
+      )}
+
+      {userMgmtOpen && (
+        <UserManagement onClose={() => setUserMgmtOpen(false)} />
       )}
 
       <footer className="border-t border-gray-800 mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between text-sm text-gray-500">
           <span className="flex items-center gap-2">
             <Film className="w-4 h-4" />
-            Video Cloud
+            Video Cloud — SW Vision
           </span>
           <span>{videos.length} {videos.length === 1 ? 'Video' : 'Videos'}</span>
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }

@@ -18,7 +18,7 @@ function formatDate(iso) {
   });
 }
 
-export default function VideoCard({ video, onPlay, onDelete, onEdit }) {
+export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl, isAdmin }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [title, setTitle] = useState(video.title);
@@ -48,7 +48,7 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit }) {
         onClick={() => onPlay(video)}
       >
         <img
-          src={video.thumbnailUrl}
+          src={getMediaUrl(video.thumbnailUrl)}
           alt={video.title}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
@@ -82,32 +82,34 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit }) {
           <h3 className="font-semibold text-white text-sm leading-snug line-clamp-2 flex-1">
             {video.title}
           </h3>
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 top-8 z-10 w-40 rounded-lg bg-gray-800 border border-gray-700 shadow-xl py-1">
+            {isAdmin && (
+              <div className="relative" ref={menuRef}>
                 <button
-                  onClick={() => { setEditOpen(true); setMenuOpen(false); }}
-                  className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
                 >
-                  <Pencil className="w-3.5 h-3.5" />
-                  Bearbeiten
+                  <MoreVertical className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={() => { onDelete(video.id); setMenuOpen(false); }}
-                  className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  Löschen
-                </button>
+                {menuOpen && (
+                  <div className="absolute right-0 top-8 z-10 w-40 rounded-lg bg-gray-800 border border-gray-700 shadow-xl py-1">
+                    <button
+                      onClick={() => { setEditOpen(true); setMenuOpen(false); }}
+                      className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Bearbeiten
+                    </button>
+                    <button
+                      onClick={() => { onDelete(video.id); setMenuOpen(false); }}
+                      className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Löschen
+                    </button>
+                  </div>
+                )}
               </div>
             )}
-          </div>
         </div>
         {video.description && (
           <p className="mt-1 text-xs text-gray-500 line-clamp-2">{video.description}</p>

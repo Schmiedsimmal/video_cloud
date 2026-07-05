@@ -20,7 +20,7 @@ function formatDate(iso) {
   });
 }
 
-export default function VideoPlayer({ video, onClose, onDelete }) {
+export default function VideoPlayer({ video, onClose, onDelete, getMediaUrl, isAdmin }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
@@ -35,7 +35,7 @@ export default function VideoPlayer({ video, onClose, onDelete }) {
         {/* Video */}
         <div className="relative bg-black rounded-t-2xl">
           <video
-            src={`/api/stream/${video.filename}`}
+            src={getMediaUrl(`/api/stream/${video.filename}`)}
             controls
             autoPlay
             className="w-full max-h-[60vh] rounded-t-2xl"
@@ -74,7 +74,7 @@ export default function VideoPlayer({ video, onClose, onDelete }) {
 
           <div className="flex items-center gap-3">
             <a
-              href={`/static/videos/${video.filename}`}
+              href={getMediaUrl(`/static/videos/${video.filename}`)}
               download
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium transition-colors"
             >
@@ -82,7 +82,7 @@ export default function VideoPlayer({ video, onClose, onDelete }) {
               Herunterladen
             </a>
 
-            {!confirmDelete ? (
+            {!confirmDelete && isAdmin && (
               <button
                 onClick={() => setConfirmDelete(true)}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium transition-colors"
@@ -90,7 +90,9 @@ export default function VideoPlayer({ video, onClose, onDelete }) {
                 <Trash2 className="w-4 h-4" />
                 Löschen
               </button>
-            ) : (
+            )}
+
+            {confirmDelete && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-gray-400">Wirklich löschen?</span>
                 <button

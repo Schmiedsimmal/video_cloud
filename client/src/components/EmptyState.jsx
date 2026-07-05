@@ -11,16 +11,20 @@ export default function EmptyState({ onUpload }) {
       </div>
       <h2 className="text-2xl font-bold text-white mb-2">Noch keine Videos</h2>
       <p className="text-gray-400 max-w-md mb-8">
-        Lade deine ersten Videoprojekte hoch und teile sie mit deinen Kunden.
-        Einfach per Drag &amp; Drop oder Klick auf Upload.
+        {onUpload
+          ? 'Lade deine ersten Videoprojekte hoch und teile sie mit deinen Kunden. Einfach per Drag & Drop oder Klick auf Upload.'
+          : 'Es wurden noch keine Videos hochgeladen. Schade später wieder vorbei.'
+        }
       </p>
-      <button
-        onClick={onUpload}
-        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-medium transition-all shadow-lg shadow-brand-600/20 hover:shadow-brand-500/30"
-      >
-        <CloudUpload className="w-5 h-5" />
-        Erstes Video hochladen
-      </button>
+      {onUpload && (
+        <button
+          onClick={onUpload}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-700 hover:from-brand-500 hover:to-brand-600 text-white font-medium transition-all shadow-lg shadow-brand-600/20 hover:shadow-brand-500/30"
+        >
+          <CloudUpload className="w-5 h-5" />
+          Erstes Video hochladen
+        </button>
+      )}
     </div>
   );
 }

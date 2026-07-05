@@ -3,15 +3,18 @@ const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const fsp = require('fs/promises');
 const ffmpeg = require('fluent-ffmpeg');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'sw-vision-cloud-secret-change-in-production';
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const VIDEOS_DIR = path.join(DATA_DIR, 'videos');
 const THUMBS_DIR = path.join(DATA_DIR, 'thumbnails');
 const META_FILE = path.join(DATA_DIR, 'metadata.json');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
 // Ensure directories exist
 [VIDEOS_DIR, THUMBS_DIR].forEach((dir) => {
@@ -23,10 +26,59 @@ if (!fs.existsSync(META_FILE)) {
   fs.writeFileSync(META_FILE, JSON.stringify([], null, 2));
 }
 
+// Ensure users file exists with default admin
+function ensureUsersFile() {
+  if (!fs.existsSync(USERS_FILE)) {
+    const defaultHash = bcrypt.hashSync('admin123', 10);
+    const defaultUsers = [
+      {
+        id: 'user_admin',
+        username: 'admin',
+        password: defaultHash,
+        role: 'admin',
+        name: 'Administrator',
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    fs.writeFileSync(USERS_FILE, JSON.stringify(defaultUsers, null, 2));
+    console.log('Created default admin user: admin / admin123');
+  }
+}
+ensureUsersFile();
+
 app.use(cors());
 app.use(express.json());
-app.use('/static/videos', express.static(VIDEOS_DIR));
-app.use('/static/thumbnails', express.static(THUMBS_DIR));
+
+// --- Auth Helpers ---
+
+function loadUsers() {
+  try {
+    return JSON.parse(fs.readFileSync(USERS_FILE, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+function saveUsers(data) {
+  fs.writeFileSync(USERS_FILE, JSON.stringify(data, null, 2));
+}
+
+function authMiddleware(req, res, next) {
+  const token = req.headers.authorization?.replace('Bearer ', '') || req.query.token;
+  if (!token) return res.status(401).json({ error: 'Authentication required' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch {
+    return res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
+
+function adminOnly(req, res, next) {
+  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  next();
+}
 
 // --- Helpers ---
 
@@ -109,8 +161,120 @@ if (fs.existsSync(clientBuild)) {
   app.use(express.static(clientBuild));
 }
 
-// List all videos
-app.get('/api/videos', (_req, res) => {
+// --- Auth Routes ---
+
+// Login
+app.post('/api/auth/login', (req, res) => {
+  const { username, password } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+  const users = loadUsers();
+  const user = users.find((u) => u.username === username);
+  if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+
+  if (!bcrypt.compareSync(password, user.password)) {
+    return res.status(401).json({ error: 'Invalid credentials' });
+  }
+
+  const token = jwt.sign(
+    { id: user.id, username: user.username, role: user.role, name: user.name },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+  res.json({
+    token,
+    user: { id: user.id, username: user.username, role: user.role, name: user.name },
+  });
+});
+
+// Verify token / get current user
+app.get('/api/auth/me', authMiddleware, (req, res) => {
+  res.json({ user: req.user });
+});
+
+// Change password
+app.post('/api/auth/change-password', authMiddleware, (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || ! newPassword) return res.status(400).json({ error: 'Both passwords required' });
+
+  const users = loadUsers();
+  const user = users.find((u) => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (!bcrypt.compareSync(currentPassword, user.password)) {
+    return res.status(401).json({ error: 'Current password is wrong' });
+  }
+
+  user.password = bcrypt.hashSync(newPassword, 10);
+  saveUsers(users);
+  res.json({ success: true });
+});
+
+// --- User Management (admin only) ---
+
+// List users
+app.get('/api/users', authMiddleware, adminOnly, (_req, res) => {
+  const users = loadUsers().map((u) => ({
+    id: u.id,
+    username: u.username,
+    role: u.role,
+    name: u.name,
+    createdAt: u.createdAt,
+  }));
+  res.json(users);
+});
+
+// Create user
+app.post('/api/users', authMiddleware, adminOnly, (req, res) => {
+  const { username, password, name, role } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'Username and password required' });
+
+  const users = loadUsers();
+  if (users.find((u) => u.username === username)) {
+    return res.status(409).json({ error: 'Username already exists' });
+  }
+
+  const newUser = {
+    id: `user_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    username,
+    password: bcrypt.hashSync(password, 10),
+    role: role === 'admin' ? 'admin' : 'user',
+    name: name || username,
+    createdAt: new Date().toISOString(),
+  };
+
+  users.push(newUser);
+  saveUsers(users);
+
+  res.status(201).json({
+    id: newUser.id,
+    username: newUser.username,
+    role: newUser.role,
+    name: newUser.name,
+    createdAt: newUser.createdAt,
+  });
+});
+
+// Delete user
+app.delete('/api/users/:id', authMiddleware, adminOnly, (req, res) => {
+  if (req.params.id === 'user_admin') return res.status(400).json({ error: 'Cannot delete default admin' });
+  if (req.params.id === req.user.id) return res.status(400).json({ error: 'Cannot delete yourself' });
+
+  const users = loadUsers();
+  const filtered = users.filter((u) => u.id !== req.params.id);
+  if (filtered.length === users.length) return res.status(404).json({ error: 'User not found' });
+
+  saveUsers(filtered);
+  res.json({ success: true });
+});
+
+// --- Protected static files ---
+app.use('/static/videos', authMiddleware, express.static(VIDEOS_DIR));
+app.use('/static/thumbnails', authMiddleware, express.static(THUMBS_DIR));
+
+// List all videos (authenticated)
+app.get('/api/videos', authMiddleware, (_req, res) => {
   const meta = loadMetadata();
   const videos = meta.map((v) => ({
     ...v,
@@ -121,8 +285,8 @@ app.get('/api/videos', (_req, res) => {
   res.json(videos);
 });
 
-// Upload a video
-app.post('/api/videos', upload.single('video'), async (req, res) => {
+// Upload a video (admin only)
+app.post('/api/videos', authMiddleware, adminOnly, upload.single('video'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
   const { title, description } = req.body;
@@ -165,8 +329,8 @@ app.post('/api/videos', upload.single('video'), async (req, res) => {
   });
 });
 
-// Delete a video
-app.delete('/api/videos/:id', (req, res) => {
+// Delete a video (admin only)
+app.delete('/api/videos/:id', authMiddleware, adminOnly, (req, res) => {
   const meta = loadMetadata();
   const entry = meta.find((v) => v.id === req.params.id);
   if (!entry) return res.status(404).json({ error: 'Video not found' });
@@ -181,8 +345,8 @@ app.delete('/api/videos/:id', (req, res) => {
   res.json({ success: true });
 });
 
-// Update video metadata (title, description)
-app.patch('/api/videos/:id', (req, res) => {
+// Update video metadata (admin only)
+app.patch('/api/videos/:id', authMiddleware, adminOnly, (req, res) => {
   const meta = loadMetadata();
   const entry = meta.find((v) => v.id === req.params.id);
   if (!entry) return res.status(404).json({ error: 'Video not found' });
@@ -194,8 +358,8 @@ app.patch('/api/videos/:id', (req, res) => {
   res.json(entry);
 });
 
-// Stream video with range support
-app.get('/api/stream/:filename', (req, res) => {
+// Stream video with range support (authenticated)
+app.get('/api/stream/:filename', authMiddleware, (req, res) => {
   const videoPath = path.join(VIDEOS_DIR, req.params.filename);
   if (!fs.existsSync(videoPath)) return res.status(404).send('Not found');
 
