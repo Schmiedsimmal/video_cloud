@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext.jsx';
-import { UserPlus, Trash2, X, Shield, User as UserIcon, Loader2 } from 'lucide-react';
+import { UserPlus, Trash2, X, Shield, User as UserIcon, Loader2, Pencil, KeyRound, Film } from 'lucide-react';
 
 export default function UserManagement({ onClose }) {
   const { authFetch } = useAuth();
@@ -10,6 +10,12 @@ export default function UserManagement({ onClose }) {
   const [newUser, setNewUser] = useState({ username: '', password: '', name: '', role: 'user' });
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', username: '', role: 'user' });
+  const [editError, setEditError] = useState('');
+  const [resetUser, setResetUser] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetError, setResetError] = useState('');
 
   const fetchUsers = async () => {
     try {
@@ -61,6 +67,56 @@ export default function UserManagement({ onClose }) {
     }
   };
 
+  const handleEdit = async (e) => {
+    e.preventDefault();
+    setEditError('');
+    try {
+      const res = await authFetch(`/api/users/${editingUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Fehler beim Speichern');
+      }
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err) {
+      setEditError(err.message);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setResetError('');
+    if (newPassword.length < 6) {
+      setResetError('Passwort muss mindestens 6 Zeichen lang sein');
+      return;
+    }
+    try {
+      const res = await authFetch(`/api/users/${resetUser.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Fehler');
+      }
+      setResetUser(null);
+      setNewPassword('');
+    } catch (err) {
+      setResetError(err.message);
+    }
+  };
+
+  const startEdit = (u) => {
+    setEditingUser(u);
+    setEditForm({ name: u.name, username: u.username, role: u.role });
+    setEditError('');
+  };
+
   const formatDate = (iso) => {
     return new Date(iso).toLocaleDateString('de-DE', {
       day: '2-digit', month: 'short', year: 'numeric',
@@ -101,14 +157,31 @@ export default function UserManagement({ onClose }) {
                       <p className="text-sm font-medium text-white">{u.name}</p>
                       <p className="text-xs text-gray-500">@{u.username} · {u.role === 'admin' ? 'Administrator' : 'Nutzer'} · {formatDate(u.createdAt)}</p>
                     </div>
-                    {u.id !== 'user_admin' && (
+                    <div className="flex items-center gap-1">
                       <button
-                        onClick={() => handleDelete(u.id)}
-                        className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-colors"
+                        onClick={() => startEdit(u)}
+                        className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                        title="Bearbeiten"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Pencil className="w-4 h-4" />
                       </button>
-                    )}
+                      <button
+                        onClick={() => { setResetUser(u); setNewPassword(''); setResetError(''); }}
+                        className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                        title="Passwort zurücksetzen"
+                      >
+                        <KeyRound className="w-4 h-4" />
+                      </button>
+                      {u.id !== 'user_admin' && (
+                        <button
+                          onClick={() => handleDelete(u.id)}
+                          className="p-1.5 rounded-lg hover:bg-red-500/10 text-gray-400 hover:text-red-400 transition-colors"
+                          title="Löschen"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -186,6 +259,77 @@ export default function UserManagement({ onClose }) {
             </>
           )}
         </div>
+
+        {editingUser && (
+          <div className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4" onClick={() => setEditingUser(null)}>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-bold text-white mb-4">Nutzer bearbeiten</h3>
+              <form onSubmit={handleEdit} className="space-y-3">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Name</label>
+                  <input
+                    type="text"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Benutzername</label>
+                  <input
+                    type="text"
+                    value={editForm.username}
+                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Rolle</label>
+                  <select
+                    value={editForm.role}
+                    onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none"
+                  >
+                    <option value="user">Nutzer</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                {editError && <p className="text-sm text-red-400">{editError}</p>}
+                <div className="flex justify-end gap-2 pt-1">
+                  <button type="button" onClick={() => setEditingUser(null)} className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white">Abbrechen</button>
+                  <button type="submit" className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium">Speichern</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {resetUser && (
+          <div className="fixed inset-0 z-[60] bg-black/70 flex items-center justify-center p-4" onClick={() => setResetUser(null)}>
+            <div className="bg-gray-900 rounded-xl border border-gray-800 p-6 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+              <h3 className="text-lg font-bold text-white mb-1">Passwort zurücksetzen</h3>
+              <p className="text-sm text-gray-500 mb-4">Für: {resetUser.name} (@{resetUser.username})</p>
+              <form onSubmit={handleResetPassword} className="space-y-3">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Neues Passwort</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    autoFocus
+                    placeholder="Mindestens 6 Zeichen"
+                    className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+                {resetError && <p className="text-sm text-red-400">{resetError}</p>}
+                <div className="flex justify-end gap-2 pt-1">
+                  <button type="button" onClick={() => setResetUser(null)} className="px-3 py-2 rounded-lg text-sm text-gray-400 hover:text-white">Abbrechen</button>
+                  <button type="submit" className="px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium">Zurücksetzen</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

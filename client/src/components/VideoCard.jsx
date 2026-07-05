@@ -1,4 +1,4 @@
-import { Play, Clock, MoreVertical, Trash2, Pencil, HardDrive, Users } from 'lucide-react';
+import { Play, Clock, MoreVertical, Trash2, Pencil, HardDrive, Users, CheckSquare, Square } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../auth/AuthContext.jsx';
 
@@ -19,7 +19,7 @@ function formatDate(iso) {
   });
 }
 
-export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl, isAdmin }) {
+export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl, isAdmin, selectMode, isSelected, onToggleSelect }) {
   const { authFetch } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -48,9 +48,17 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
     <div className="group relative rounded-xl overflow-hidden bg-gray-900 border border-gray-800 hover:border-gray-700 transition-all hover:shadow-2xl hover:shadow-black/40 animate-fade-in">
       {/* Thumbnail */}
       <div
-        className="relative aspect-video bg-gray-800 cursor-pointer overflow-hidden"
-        onClick={() => onPlay(video)}
+        className={`relative aspect-video bg-gray-800 overflow-hidden ${selectMode ? 'cursor-pointer' : 'cursor-pointer'}`}
+        onClick={() => selectMode ? onToggleSelect(video.id) : onPlay(video)}
       >
+        {selectMode && (
+          <div className={`absolute top-2 left-2 z-10 w-6 h-6 rounded-md flex items-center justify-center transition-colors ${isSelected ? 'bg-brand-600 text-white' : 'bg-black/60 text-gray-400'}`}>
+            {isSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+          </div>
+        )}
+        {isSelected && selectMode && (
+          <div className="absolute inset-0 ring-2 ring-brand-500 rounded-t-xl pointer-events-none" />
+        )}
         <img
           src={getMediaUrl(video.thumbnailUrl)}
           alt={video.title}

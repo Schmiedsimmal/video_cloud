@@ -74,7 +74,7 @@ export default function VideoPlayer({ video, onClose, onDelete, getMediaUrl, isA
 
           <div className="flex items-center gap-3">
             <a
-              href={getMediaUrl(`/static/videos/${video.filename}`)}
+              href={getMediaUrl(`/api/download/${video.filename}`)}
               download
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium transition-colors"
             >

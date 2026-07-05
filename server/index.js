@@ -303,6 +303,45 @@ app.post('/api/users', authMiddleware, adminOnly, (req, res) => {
   });
 });
 
+// Edit user (admin only)
+app.patch('/api/users/:id', authMiddleware, adminOnly, (req, res) => {
+  const users = loadUsers();
+  const user = users.find((u) => u.id === req.params.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  if (req.body.name !== undefined) user.name = req.body.name;
+  if (req.body.role !== undefined) user.role = req.body.role === 'admin' ? 'admin' : 'user';
+  if (req.body.username !== undefined) {
+    if (users.find((u) => u.username === req.body.username && u.id !== user.id)) {
+      return res.status(409).json({ error: 'Username already exists' });
+    }
+    user.username = req.body.username;
+  }
+
+  saveUsers(users);
+  res.json({
+    id: user.id,
+    username: user.username,
+    role: user.role,
+    name: user.name,
+    createdAt: user.createdAt,
+  });
+});
+
+// Reset user password (admin only)
+app.post('/api/users/:id/reset-password', authMiddleware, adminOnly, (req, res) => {
+  const { newPassword } = req.body;
+  if (!newPassword || newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+
+  const users = loadUsers();
+  const user = users.find((u) => u.id === req.params.id);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  user.password = bcrypt.hashSync(newPassword, 10);
+  saveUsers(users);
+  res.json({ success: true });
+});
+
 // Delete user
 app.delete('/api/users/:id', authMiddleware, adminOnly, (req, res) => {
   if (req.params.id === 'user_admin') return res.status(400).json({ error: 'Cannot delete default admin' });
@@ -314,6 +353,22 @@ app.delete('/api/users/:id', authMiddleware, adminOnly, (req, res) => {
 
   saveUsers(filtered);
   res.json({ success: true });
+});
+
+// --- Stats (admin only) ---
+app.get('/api/stats', authMiddleware, adminOnly, (_req, res) => {
+  const meta = loadMetadata();
+  const users = loadUsers();
+  const totalSize = meta.reduce((sum, v) => sum + (v.size || 0), 0);
+  const totalDuration = meta.reduce((sum, v) => sum + (v.duration || 0), 0);
+  const galleries = fs.existsSync(GALLERIES_DIR) ? fs.readdirSync(GALLERIES_DIR) : [];
+  res.json({
+    videoCount: meta.length,
+    totalSize,
+    totalDuration,
+    userCount: users.length,
+    galleryCount: galleries.length,
+  });
 });
 
 // --- Protected static files (serve from all galleries) ---
@@ -396,6 +451,26 @@ app.post('/api/videos', authMiddleware, adminOnly, upload.single('video'), async
   });
 });
 
+// Bulk delete videos (admin only)
+app.post('/api/videos/bulk-delete', authMiddleware, adminOnly, (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) return res.status(400).json({ error: 'No IDs provided' });
+
+  const meta = loadMetadata();
+  const toDelete = meta.filter((v) => ids.includes(v.id));
+  toDelete.forEach((entry) => {
+    const videoFile = findVideoFile(entry.filename);
+    const thumbFile = findThumbFile(entry.thumbnail);
+    [videoFile, thumbFile].forEach((f) => {
+      if (f && fs.existsSync(f)) fs.unlinkSync(f);
+    });
+  });
+
+  const updated = meta.filter((v) => !ids.includes(v.id));
+  saveMetadata(updated);
+  res.json({ success: true, deleted: toDelete.length });
+});
+
 // Delete a video (admin only)
 app.delete('/api/videos/:id', authMiddleware, adminOnly, (req, res) => {
   const meta = loadMetadata();
@@ -426,6 +501,24 @@ app.patch('/api/videos/:id', authMiddleware, adminOnly, (req, res) => {
 
   saveMetadata(meta);
   res.json(entry);
+});
+
+// Download video (authenticated — users only see assigned)
+app.get('/api/download/:filename', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    const meta = loadMetadata();
+    const video = meta.find((v) => v.filename === req.params.filename);
+    if (!video || !video.assignedTo || !video.assignedTo.includes(req.user.id)) {
+      return res.status(403).send('Access denied');
+    }
+  }
+  const videoPath = findVideoFile(req.params.filename);
+  if (!videoPath) return res.status(404).send('Not found');
+
+  const meta = loadMetadata();
+  const entry = meta.find((v) => v.filename === req.params.filename);
+  const downloadName = entry ? entry.title + path.extname(videoPath) : req.params.filename;
+  res.download(videoPath, downloadName);
 });
 
 // Stream video with range support (authenticated — users only see assigned)

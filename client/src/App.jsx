@@ -8,7 +8,15 @@ import EmptyState from './components/EmptyState.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import UserManagement from './components/UserManagement.jsx';
 import ChangePasswordModal from './components/ChangePasswordModal.jsx';
-import { Film, Loader2 } from 'lucide-react';
+import { Film, Loader2, HardDrive, Clock, Users as UsersIcon } from 'lucide-react';
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
 
 function AppContent() {
   const { user, loading, authFetch, getMediaUrl, logout, isAdmin } = useAuth();
@@ -19,6 +27,7 @@ function AppContent() {
   const [uploadProgress, setUploadProgress] = useState(null);
   const [userMgmtOpen, setUserMgmtOpen] = useState(false);
   const [passwordChangeOpen, setPasswordChangeOpen] = useState(false);
+  const [stats, setStats] = useState(null);
 
   const fetchVideos = useCallback(async () => {
     try {
@@ -35,6 +44,12 @@ function AppContent() {
   useEffect(() => {
     if (user) fetchVideos();
   }, [user, fetchVideos]);
+
+  useEffect(() => {
+    if (user && isAdmin) {
+      authFetch('/api/stats').then(res => res.json()).then(setStats).catch(() => {});
+    }
+  }, [user, isAdmin, authFetch, videos]);
 
   const handleUpload = async (file, title, description, assignedTo) => {
     const formData = new FormData();
@@ -94,6 +109,19 @@ function AppContent() {
     }
   };
 
+  const handleBulkDelete = async (ids) => {
+    try {
+      await authFetch('/api/videos/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      setVideos((prev) => prev.filter((v) => !ids.includes(v.id)));
+    } catch (err) {
+      console.error('Bulk delete failed:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -139,6 +167,7 @@ function AppContent() {
             onPlay={setPlayingVideo}
             onDelete={handleDelete}
             onEdit={handleUpdate}
+            onBulkDelete={handleBulkDelete}
             getMediaUrl={getMediaUrl}
             isAdmin={isAdmin}
           />
@@ -172,12 +201,26 @@ function AppContent() {
       )}
 
       <footer className="border-t border-gray-800 mt-12">
-        <div className="max-w-7xl mx-auto px-4 py-6 flex items-center justify-between text-sm text-gray-500">
+        <div className="max-w-7xl mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-500">
           <span className="flex items-center gap-2">
             <Film className="w-4 h-4" />
             Video Cloud — SW Vision
           </span>
-          <span>{videos.length} {videos.length === 1 ? 'Video' : 'Videos'}</span>
+          <div className="flex items-center gap-4">
+            <span>{videos.length} {videos.length === 1 ? 'Video' : 'Videos'}</span>
+            {stats && isAdmin && (
+              <>
+                <span className="flex items-center gap-1.5">
+                  <HardDrive className="w-4 h-4" />
+                  {formatBytes(stats.totalSize)}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <UsersIcon className="w-4 h-4" />
+                  {stats.userCount} Nutzer
+                </span>
+              </>
+            )}
+          </div>
         </div>
       </footer>
     </div>
