@@ -60,6 +60,7 @@ function AppContent() {
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
+      xhr.timeout = 0; // No timeout for large uploads
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable) {
           setUploadProgress(Math.round((e.loaded / e.total) * 100));

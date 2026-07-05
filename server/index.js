@@ -46,6 +46,13 @@ ensureUsersFile();
 app.use(cors());
 app.use(express.json());
 
+// Increase timeouts for large file uploads
+app.use((req, res, next) => {
+  req.setTimeout(0); // No timeout for uploads
+  res.setTimeout(0);
+  next();
+});
+
 // --- Auth Helpers ---
 
 function loadUsers() {
@@ -189,7 +196,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 * 1024 }, // 10 GB
+  limits: { fileSize: 20 * 1024 * 1024 * 1024 }, // 20 GB
   fileFilter: (_req, file, cb) => {
     const allowed = /\.(mp4|mov|avi|mkv|webm|m4v)$/i;
     if (allowed.test(path.extname(file.originalname))) {
@@ -569,6 +576,10 @@ app.get('*', (_req, res) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Video Cloud server running on http://0.0.0.0:${PORT}`);
 });
+
+server.timeout = 0; // Disable server timeout for large uploads
+server.keepAliveTimeout = 0;
+server.requestTimeout = 0;
