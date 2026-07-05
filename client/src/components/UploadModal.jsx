@@ -1,14 +1,22 @@
-import { useState, useRef, useCallback } from 'react';
-import { CloudUpload, X, Film, Loader2, CheckCircle } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { CloudUpload, X, Film, Loader2, CheckCircle, Users } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 export default function UploadModal({ onClose, onUpload, progress }) {
+  const { authFetch } = useAuth();
   const [dragOver, setDragOver] = useState(false);
   const [file, setFile] = useState(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [assignedTo, setAssignedTo] = useState([]);
+  const [users, setUsers] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    authFetch('/api/users').then(res => res.json()).then(setUsers).catch(() => {});
+  }, []);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
@@ -41,7 +49,7 @@ export default function UploadModal({ onClose, onUpload, progress }) {
     setUploading(true);
     setError('');
     try {
-      await onUpload(file, title, description);
+      await onUpload(file, title, description, assignedTo);
       onClose();
     } catch (err) {
       setError('Upload fehlgeschlagen. Bitte versuche es erneut.');
@@ -171,6 +179,32 @@ export default function UploadModal({ onClose, onUpload, progress }) {
                   rows="3"
                   className="w-full px-3 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none transition-colors resize-none"
                 />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                  <Users className="w-4 h-4" />
+                  Sichtbar für Nutzer
+                </label>
+                <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin rounded-lg bg-gray-800 border border-gray-700 p-3">
+                  {users.filter(u => u.role !== 'admin').length === 0 && (
+                    <p className="text-xs text-gray-500">Keine Nutzer vorhanden. Lege zuerst Nutzer an.</p>
+                  )}
+                  {users.filter(u => u.role !== 'admin').map(u => (
+                    <label key={u.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={assignedTo.includes(u.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setAssignedTo([...assignedTo, u.id]);
+                          else setAssignedTo(assignedTo.filter(id => id !== u.id));
+                        }}
+                        className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-sm text-gray-300">{u.name} <span className="text-gray-500">@{u.username}</span></span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-600 mt-1">Keine Auswahl = nur für Admins sichtbar</p>
               </div>
             </>
           )}

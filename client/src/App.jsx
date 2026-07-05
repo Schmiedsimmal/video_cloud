@@ -36,11 +36,12 @@ function AppContent() {
     if (user) fetchVideos();
   }, [user, fetchVideos]);
 
-  const handleUpload = async (file, title, description) => {
+  const handleUpload = async (file, title, description, assignedTo) => {
     const formData = new FormData();
     formData.append('video', file);
     formData.append('title', title);
     formData.append('description', description);
+    formData.append('assignedTo', JSON.stringify(assignedTo || []));
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();

@@ -1,5 +1,6 @@
-import { Play, Clock, MoreVertical, Trash2, Pencil, HardDrive } from 'lucide-react';
+import { Play, Clock, MoreVertical, Trash2, Pencil, HardDrive, Users } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../auth/AuthContext.jsx';
 
 function formatBytes(bytes) {
   if (bytes === 0) return '0 B';
@@ -19,10 +20,13 @@ function formatDate(iso) {
 }
 
 export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl, isAdmin }) {
+  const { authFetch } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [title, setTitle] = useState(video.title);
   const [description, setDescription] = useState(video.description);
+  const [assignedTo, setAssignedTo] = useState(video.assignedTo || []);
+  const [users, setUsers] = useState([]);
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -36,7 +40,7 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
   }, []);
 
   const handleSaveEdit = () => {
-    onEdit(video.id, { title, description });
+    onEdit(video.id, { title, description, assignedTo });
     setEditOpen(false);
   };
 
@@ -93,7 +97,11 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
                 {menuOpen && (
                   <div className="absolute right-0 top-8 z-10 w-40 rounded-lg bg-gray-800 border border-gray-700 shadow-xl py-1">
                     <button
-                      onClick={() => { setEditOpen(true); setMenuOpen(false); }}
+                      onClick={() => {
+                        setEditOpen(true);
+                        setMenuOpen(false);
+                        authFetch('/api/users').then(res => res.json()).then(setUsers).catch(() => {});
+                      }}
                       className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -152,6 +160,31 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
                   rows="3"
                   className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none resize-none"
                 />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1 flex items-center gap-1.5">
+                  <Users className="w-4 h-4" />
+                  Sichtbar für Nutzer
+                </label>
+                <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin rounded-lg bg-gray-800 border border-gray-700 p-3">
+                  {users.filter(u => u.role !== 'admin').length === 0 && (
+                    <p className="text-xs text-gray-500">Keine Nutzer vorhanden.</p>
+                  )}
+                  {users.filter(u => u.role !== 'admin').map(u => (
+                    <label key={u.id} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={assignedTo.includes(u.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setAssignedTo([...assignedTo, u.id]);
+                          else setAssignedTo(assignedTo.filter(id => id !== u.id));
+                        }}
+                        className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-brand-600 focus:ring-brand-500"
+                      />
+                      <span className="text-sm text-gray-300">{u.name} <span className="text-gray-500">@{u.username}</span></span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <button

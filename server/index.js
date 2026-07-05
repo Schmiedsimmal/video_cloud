@@ -273,10 +273,14 @@ app.delete('/api/users/:id', authMiddleware, adminOnly, (req, res) => {
 app.use('/static/videos', authMiddleware, express.static(VIDEOS_DIR));
 app.use('/static/thumbnails', authMiddleware, express.static(THUMBS_DIR));
 
-// List all videos (authenticated)
-app.get('/api/videos', authMiddleware, (_req, res) => {
+// List all videos (authenticated — admin sees all, users see assigned)
+app.get('/api/videos', authMiddleware, (req, res) => {
   const meta = loadMetadata();
-  const videos = meta.map((v) => ({
+  let filtered = meta;
+  if (req.user.role !== 'admin') {
+    filtered = meta.filter((v) => v.assignedTo && v.assignedTo.includes(req.user.id));
+  }
+  const videos = filtered.map((v) => ({
     ...v,
     videoUrl: `/static/videos/${v.filename}`,
     thumbnailUrl: `/static/thumbnails/${v.thumbnail}`,
@@ -289,7 +293,7 @@ app.get('/api/videos', authMiddleware, (_req, res) => {
 app.post('/api/videos', authMiddleware, adminOnly, upload.single('video'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
 
-  const { title, description } = req.body;
+  const { title, description, assignedTo } = req.body;
   const filename = req.file.filename;
   const videoPath = req.file.path;
   const thumbName = filename.replace(/\.[^.]+$/, '.jpg');
@@ -306,6 +310,9 @@ app.post('/api/videos', authMiddleware, adminOnly, upload.single('video'), async
     // Thumbnail generation failed — frontend will show a fallback icon
   }
 
+  let assignedUsers = [];
+  try { assignedUsers = JSON.parse(assignedTo || '[]'); } catch { assignedUsers = []; }
+
   const entry = {
     id: `vid_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     title: title || path.basename(req.file.originalname, path.extname(req.file.originalname)),
@@ -314,6 +321,7 @@ app.post('/api/videos', authMiddleware, adminOnly, upload.single('video'), async
     thumbnail: thumbName,
     size: req.file.size,
     duration,
+    assignedTo: assignedUsers,
     uploadedAt: new Date().toISOString(),
   };
 
@@ -353,13 +361,21 @@ app.patch('/api/videos/:id', authMiddleware, adminOnly, (req, res) => {
 
   if (req.body.title !== undefined) entry.title = req.body.title;
   if (req.body.description !== undefined) entry.description = req.body.description;
+  if (req.body.assignedTo !== undefined) entry.assignedTo = req.body.assignedTo;
 
   saveMetadata(meta);
   res.json(entry);
 });
 
-// Stream video with range support (authenticated)
+// Stream video with range support (authenticated — users only see assigned)
 app.get('/api/stream/:filename', authMiddleware, (req, res) => {
+  if (req.user.role !== 'admin') {
+    const meta = loadMetadata();
+    const video = meta.find((v) => v.filename === req.params.filename);
+    if (!video || !video.assignedTo || !video.assignedTo.includes(req.user.id)) {
+      return res.status(403).send('Access denied');
+    }
+  }
   const videoPath = path.join(VIDEOS_DIR, req.params.filename);
   if (!fs.existsSync(videoPath)) return res.status(404).send('Not found');
 
