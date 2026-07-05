@@ -1,7 +1,7 @@
-import { CloudUpload, Video, LogOut, Users, Shield } from 'lucide-react';
+import { CloudUpload, Video, LogOut, Users, Shield, KeyRound } from 'lucide-react';
 import { useState } from 'react';
 
-export default function Header({ user, videoCount, isAdmin, onUploadClick, onUserMgmtClick, onLogout }) {
+export default function Header({ user, videoCount, isAdmin, onUploadClick, onUserMgmtClick, onLogout, onChangePassword }) {
   const [menuOpen, setMenuOpen] = useState(false);
   return (
     <header className="sticky top-0 z-30 border-b border-gray-800 bg-gray-950/80 backdrop-blur-xl">
@@ -64,6 +64,13 @@ export default function Header({ user, videoCount, isAdmin, onUploadClick, onUse
                         @{user.username}
                       </p>
                     </div>
+                    <button
+                      onClick={() => { onChangePassword(); setMenuOpen(false); }}
+                      className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <KeyRound className="w-4 h-4" />
+                      Passwort ändern
+                    </button>
                     <button
                       onClick={() => { onLogout(); setMenuOpen(false); }}
                       className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"

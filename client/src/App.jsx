@@ -7,6 +7,7 @@ import VideoPlayer from './components/VideoPlayer.jsx';
 import EmptyState from './components/EmptyState.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import UserManagement from './components/UserManagement.jsx';
+import ChangePasswordModal from './components/ChangePasswordModal.jsx';
 import { Film, Loader2 } from 'lucide-react';
 
 function AppContent() {
@@ -17,6 +18,7 @@ function AppContent() {
   const [playingVideo, setPlayingVideo] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(null);
   const [userMgmtOpen, setUserMgmtOpen] = useState(false);
+  const [passwordChangeOpen, setPasswordChangeOpen] = useState(false);
 
   const fetchVideos = useCallback(async () => {
     try {
@@ -112,6 +114,7 @@ function AppContent() {
         onUploadClick={() => setUploadOpen(true)}
         onUserMgmtClick={() => setUserMgmtOpen(true)}
         onLogout={logout}
+        onChangePassword={() => setPasswordChangeOpen(true)}
       />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -161,6 +164,10 @@ function AppContent() {
 
       {userMgmtOpen && (
         <UserManagement onClose={() => setUserMgmtOpen(false)} />
+      )}
+
+      {passwordChangeOpen && (
+        <ChangePasswordModal onClose={() => setPasswordChangeOpen(false)} />
       )}
 
       <footer className="border-t border-gray-800 mt-12">
