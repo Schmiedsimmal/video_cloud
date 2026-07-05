@@ -11,15 +11,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'sw-vision-cloud-secret-change-in-production';
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
-const VIDEOS_DIR = path.join(DATA_DIR, 'videos');
-const THUMBS_DIR = path.join(DATA_DIR, 'thumbnails');
+const GALLERIES_DIR = path.join(DATA_DIR, 'galleries');
 const META_FILE = path.join(DATA_DIR, 'metadata.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
-// Ensure directories exist
-[VIDEOS_DIR, THUMBS_DIR].forEach((dir) => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+// Ensure base directories exist
+if (!fs.existsSync(GALLERIES_DIR)) fs.mkdirSync(GALLERIES_DIR, { recursive: true });
 
 // Ensure metadata file exists
 if (!fs.existsSync(META_FILE)) {
@@ -128,10 +125,54 @@ function formatDuration(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-// --- Multer config ---
+// --- Gallery Helpers ---
+
+function getGalleryDir(galleryName) {
+  const safe = galleryName.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const dir = path.join(GALLERIES_DIR, safe);
+  const videosDir = path.join(dir, 'videos');
+  const thumbsDir = path.join(dir, 'thumbnails');
+  if (!fs.existsSync(videosDir)) fs.mkdirSync(videosDir, { recursive: true });
+  if (!fs.existsSync(thumbsDir)) fs.mkdirSync(thumbsDir, { recursive: true });
+  return { dir, videosDir, thumbsDir };
+}
+
+function resolveGalleryName(assignedUsers, users) {
+  if (assignedUsers && assignedUsers.length > 0) {
+    const user = users.find((u) => u.id === assignedUsers[0]);
+    if (user) return user.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+  }
+  return 'unassigned';
+}
+
+function findVideoFile(filename) {
+  // Search across all gallery directories for the file
+  const galleries = fs.existsSync(GALLERIES_DIR) ? fs.readdirSync(GALLERIES_DIR) : [];
+  for (const g of galleries) {
+    const videoPath = path.join(GALLERIES_DIR, g, 'videos', filename);
+    if (fs.existsSync(videoPath)) return videoPath;
+  }
+  return null;
+}
+
+function findThumbFile(thumbnail) {
+  const galleries = fs.existsSync(GALLERIES_DIR) ? fs.readdirSync(GALLERIES_DIR) : [];
+  for (const g of galleries) {
+    const thumbPath = path.join(GALLERIES_DIR, g, 'thumbnails', thumbnail);
+    if (fs.existsSync(thumbPath)) return thumbPath;
+  }
+  return null;
+}
 
 const storage = multer.diskStorage({
-  destination: VIDEOS_DIR,
+  destination: (req, file, cb) => {
+    let assignedUsers = [];
+    try { assignedUsers = JSON.parse(req.body.assignedTo || '[]'); } catch {}
+    const users = loadUsers();
+    const galleryName = resolveGalleryName(assignedUsers, users);
+    const { videosDir } = getGalleryDir(galleryName);
+    cb(null, videosDir);
+  },
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname);
     const base = path.basename(file.originalname, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -269,9 +310,17 @@ app.delete('/api/users/:id', authMiddleware, adminOnly, (req, res) => {
   res.json({ success: true });
 });
 
-// --- Protected static files ---
-app.use('/static/videos', authMiddleware, express.static(VIDEOS_DIR));
-app.use('/static/thumbnails', authMiddleware, express.static(THUMBS_DIR));
+// --- Protected static files (serve from all galleries) ---
+app.use('/static/videos', authMiddleware, (req, res, next) => {
+  const filePath = findVideoFile(path.basename(req.path));
+  if (filePath) return res.sendFile(filePath);
+  next();
+});
+app.use('/static/thumbnails', authMiddleware, (req, res, next) => {
+  const filePath = findThumbFile(path.basename(req.path));
+  if (filePath) return res.sendFile(filePath);
+  next();
+});
 
 // List all videos (authenticated — admin sees all, users see assigned)
 app.get('/api/videos', authMiddleware, (req, res) => {
@@ -297,7 +346,11 @@ app.post('/api/videos', authMiddleware, adminOnly, upload.single('video'), async
   const filename = req.file.filename;
   const videoPath = req.file.path;
   const thumbName = filename.replace(/\.[^.]+$/, '.jpg');
-  const thumbPath = path.join(THUMBS_DIR, thumbName);
+
+  // Thumbnail goes in same gallery as video
+  const thumbDir = path.dirname(videoPath).replace('/videos', '/thumbnails');
+  if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true });
+  const thumbPath = path.join(thumbDir, thumbName);
 
   let duration = 0;
   try {
@@ -343,9 +396,11 @@ app.delete('/api/videos/:id', authMiddleware, adminOnly, (req, res) => {
   const entry = meta.find((v) => v.id === req.params.id);
   if (!entry) return res.status(404).json({ error: 'Video not found' });
 
-  // Delete files
-  [path.join(VIDEOS_DIR, entry.filename), path.join(THUMBS_DIR, entry.thumbnail)].forEach((f) => {
-    if (fs.existsSync(f)) fs.unlinkSync(f);
+  // Delete files — search across galleries
+  const videoFile = findVideoFile(entry.filename);
+  const thumbFile = findThumbFile(entry.thumbnail);
+  [videoFile, thumbFile].forEach((f) => {
+    if (f && fs.existsSync(f)) fs.unlinkSync(f);
   });
 
   const updated = meta.filter((v) => v.id !== req.params.id);
@@ -376,8 +431,8 @@ app.get('/api/stream/:filename', authMiddleware, (req, res) => {
       return res.status(403).send('Access denied');
     }
   }
-  const videoPath = path.join(VIDEOS_DIR, req.params.filename);
-  if (!fs.existsSync(videoPath)) return res.status(404).send('Not found');
+  const videoPath = findVideoFile(req.params.filename);
+  if (!videoPath) return res.status(404).send('Not found');
 
   const stat = fs.statSync(videoPath);
   const fileSize = stat.size;
