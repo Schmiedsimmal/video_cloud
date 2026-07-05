@@ -152,6 +152,9 @@ function findVideoFile(filename) {
     const videoPath = path.join(GALLERIES_DIR, g, 'videos', filename);
     if (fs.existsSync(videoPath)) return videoPath;
   }
+  // Backward compat: check old videos/ dir
+  const oldPath = path.join(DATA_DIR, 'videos', filename);
+  if (fs.existsSync(oldPath)) return oldPath;
   return null;
 }
 
@@ -161,6 +164,9 @@ function findThumbFile(thumbnail) {
     const thumbPath = path.join(GALLERIES_DIR, g, 'thumbnails', thumbnail);
     if (fs.existsSync(thumbPath)) return thumbPath;
   }
+  // Backward compat: check old thumbnails/ dir
+  const oldPath = path.join(DATA_DIR, 'thumbnails', thumbnail);
+  if (fs.existsSync(oldPath)) return oldPath;
   return null;
 }
 
