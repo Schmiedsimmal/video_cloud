@@ -1,0 +1,18 @@
+services:
+  video-cloud:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: video-cloud
+    ports:
+      - "3000:3000"
+    volumes:
+      - video-data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DATA_DIR=/app/data
+    restart: unless-stopped
+
+volumes:
+  video-data:

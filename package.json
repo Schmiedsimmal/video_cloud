@@ -1,0 +1,19 @@
+{
+  "name": "video-cloud",
+  "version": "1.0.0",
+  "description": "Professional video cloud for videographers — runs on Jetson Nano in Docker",
+  "main": "server/index.js",
+  "scripts": {
+    "dev:server": "node --watch server/index.js",
+    "dev:client": "cd client && npm run dev",
+    "build:client": "cd client && npm run build",
+    "start": "node server/index.js",
+    "build": "npm run build:client"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5",
+    "fluent-ffmpeg": "^2.1.3"
+  }
+}
