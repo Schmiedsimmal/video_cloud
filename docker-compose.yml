@@ -9,7 +9,6 @@ services:
       - "3000:3000"
     volumes:
       - video-data:/app/data
-      - /mnt/ssd/video-cloud:/app/data/galleries
     environment:
       - NODE_ENV=production
       - PORT=3000
