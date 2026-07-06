@@ -25,11 +25,11 @@ export default function VideoPlayer({ video, onClose, onDelete, getMediaUrl, isA
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto scrollbar-thin"
+        className="bg-white rounded-2xl border border-gray-200 shadow-2xl w-full max-w-5xl max-h-[92vh] overflow-y-auto scrollbar-thin"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Video */}
@@ -50,9 +50,9 @@ export default function VideoPlayer({ video, onClose, onDelete, getMediaUrl, isA
 
         {/* Info */}
         <div className="p-6">
-          <h2 className="text-xl font-bold text-white mb-2">{video.title}</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{video.title}</h2>
           {video.description && (
-            <p className="text-gray-400 text-sm mb-4">{video.description}</p>
+            <p className="text-gray-500 text-sm mb-4">{video.description}</p>
           )}
 
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-5">
@@ -76,7 +76,7 @@ export default function VideoPlayer({ video, onClose, onDelete, getMediaUrl, isA
             <a
               href={getMediaUrl(`/api/download/${video.filename}`)}
               download
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-900 text-sm font-medium transition-colors"
             >
               <Download className="w-4 h-4" />
               Herunterladen
@@ -85,7 +85,7 @@ export default function VideoPlayer({ video, onClose, onDelete, getMediaUrl, isA
             {!confirmDelete && isAdmin && (
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-sm font-medium transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
                 Löschen
@@ -94,7 +94,7 @@ export default function VideoPlayer({ video, onClose, onDelete, getMediaUrl, isA
 
             {confirmDelete && (
               <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-400">Wirklich löschen?</span>
+                <span className="text-sm text-gray-500">Wirklich löschen?</span>
                 <button
                   onClick={() => onDelete(video.id)}
                   className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-medium transition-colors"
@@ -103,7 +103,7 @@ export default function VideoPlayer({ video, onClose, onDelete, getMediaUrl, isA
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm transition-colors"
+                  className="px-3 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm transition-colors"
                 >
                   Abbrechen
                 </button>

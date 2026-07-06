@@ -46,27 +46,27 @@ export default function ChangePasswordModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div
-        className="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl w-full max-w-sm"
+        className="bg-white rounded-2xl border border-gray-200 shadow-2xl w-full max-w-sm"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-lg font-bold text-white">Passwort ändern</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">Passwort ändern</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {success ? (
           <div className="p-6 flex flex-col items-center text-center">
-            <CheckCircle className="w-12 h-12 text-green-400 mb-3" />
-            <p className="text-white font-medium">Passwort erfolgreich geändert</p>
+            <CheckCircle className="w-12 h-12 text-green-500 mb-3" />
+            <p className="text-gray-900 font-medium">Passwort erfolgreich geändert</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Aktuelles Passwort</label>
+              <label className="block text-sm text-gray-600 mb-1.5">Aktuelles Passwort</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
@@ -75,13 +75,13 @@ export default function ChangePasswordModal({ onClose }) {
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   placeholder="Aktuelles Passwort"
                   autoFocus
-                  className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none transition-colors"
+                  className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:border-brand-500 focus:outline-none transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Neues Passwort</label>
+              <label className="block text-sm text-gray-600 mb-1.5">Neues Passwort</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
@@ -89,13 +89,13 @@ export default function ChangePasswordModal({ onClose }) {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Neues Passwort"
-                  className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none transition-colors"
+                  className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:border-brand-500 focus:outline-none transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1.5">Neues Passwort bestätigen</label>
+              <label className="block text-sm text-gray-600 mb-1.5">Neues Passwort bestätigen</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input
@@ -103,20 +103,20 @@ export default function ChangePasswordModal({ onClose }) {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Neues Passwort wiederholen"
-                  className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none transition-colors"
+                  className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:border-brand-500 focus:outline-none transition-colors"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="flex items-center gap-2 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2.5 text-sm text-red-400">
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-600">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {error}
               </div>
             )}
 
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white transition-colors">
+              <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-lg text-sm text-gray-500 hover:text-gray-900 transition-colors">
                 Abbrechen
               </button>
               <button

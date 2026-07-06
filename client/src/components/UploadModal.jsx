@@ -67,19 +67,19 @@ export default function UploadModal({ onClose, onUpload, progress }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-thin"
+        className="bg-white rounded-2xl border border-gray-200 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto scrollbar-thin"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-800">
-          <h2 className="text-xl font-bold text-white">Video hochladen</h2>
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Video hochladen</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+            className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -95,8 +95,8 @@ export default function UploadModal({ onClose, onUpload, progress }) {
               onClick={() => fileInputRef.current?.click()}
               className={`relative border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all ${
                 dragOver
-                  ? 'border-brand-500 bg-brand-500/10'
-                  : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
+                  ? 'border-brand-500 bg-brand-500/5'
+                  : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
               }`}
             >
               <input
@@ -106,28 +106,28 @@ export default function UploadModal({ onClose, onUpload, progress }) {
                 onChange={handleFileSelect}
                 className="hidden"
               />
-              <CloudUpload className="w-12 h-12 text-brand-400 mx-auto mb-3" />
-              <p className="text-white font-medium">Video hierher ziehen</p>
+              <CloudUpload className="w-12 h-12 text-brand-500 mx-auto mb-3" />
+              <p className="text-gray-900 font-medium">Video hierher ziehen</p>
               <p className="text-sm text-gray-500 mt-1">oder klicken zum Auswählen</p>
-              <p className="text-xs text-gray-600 mt-3">
+              <p className="text-xs text-gray-400 mt-3">
                 MP4, MOV, AVI, MKV, WebM — max. 10 GB
               </p>
             </div>
           ) : (
-            <div className="rounded-xl bg-gray-800 border border-gray-700 p-4">
+            <div className="rounded-xl bg-gray-50 border border-gray-200 p-4">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-brand-600/20">
-                  <Film className="w-6 h-6 text-brand-400" />
+                <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-brand-500/10">
+                  <Film className="w-6 h-6 text-brand-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white truncate">{file.name}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
                   <p className="text-xs text-gray-500">{formatBytes(file.size)}</p>
                 </div>
                 {!uploading && (
                   <button
                     type="button"
                     onClick={() => { setFile(null); setTitle(''); }}
-                    className="p-1.5 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-400 hover:text-gray-900 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -136,17 +136,17 @@ export default function UploadModal({ onClose, onUpload, progress }) {
               {uploading && progress !== null && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-gray-400 flex items-center gap-1.5">
+                    <span className="text-gray-500 flex items-center gap-1.5">
                       {progress < 100 ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       ) : (
-                        <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+                        <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                       )}
                       {progress < 100 ? 'Wird hochgeladen…' : 'Verarbeitung…'}
                     </span>
-                    <span className="text-white font-medium">{progress}%</span>
+                    <span className="text-gray-900 font-medium">{progress}%</span>
                   </div>
-                  <div className="h-2 rounded-full bg-gray-700 overflow-hidden">
+                  <div className="h-2 rounded-full bg-gray-200 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-brand-500 to-brand-600 transition-all duration-300"
                       style={{ width: `${progress}%` }}
@@ -161,31 +161,31 @@ export default function UploadModal({ onClose, onUpload, progress }) {
           {file && !uploading && (
             <>
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5">Titel</label>
+                <label className="block text-sm text-gray-600 mb-1.5">Titel</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Videotitel"
-                  className="w-full px-3 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none transition-colors"
+                  className="w-full px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:border-brand-500 focus:outline-none transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5">Beschreibung (optional)</label>
+                <label className="block text-sm text-gray-600 mb-1.5">Beschreibung (optional)</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Kurzbeschreibung des Videos…"
                   rows="3"
-                  className="w-full px-3 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none transition-colors resize-none"
+                  className="w-full px-3 py-2.5 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:border-brand-500 focus:outline-none transition-colors resize-none"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1.5 flex items-center gap-1.5">
+                <label className="block text-sm text-gray-600 mb-1.5 flex items-center gap-1.5">
                   <Users className="w-4 h-4" />
                   Sichtbar für Nutzer
                 </label>
-                <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin rounded-lg bg-gray-800 border border-gray-700 p-3">
+                <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin rounded-lg bg-gray-50 border border-gray-300 p-3">
                   {users.filter(u => u.role !== 'admin').length === 0 && (
                     <p className="text-xs text-gray-500">Keine Nutzer vorhanden. Lege zuerst Nutzer an.</p>
                   )}
@@ -200,17 +200,17 @@ export default function UploadModal({ onClose, onUpload, progress }) {
                         }}
                         className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-brand-600 focus:ring-brand-500"
                       />
-                      <span className="text-sm text-gray-300">{u.name} <span className="text-gray-500">@{u.username}</span></span>
+                      <span className="text-sm text-gray-700">{u.name} <span className="text-gray-400">@{u.username}</span></span>
                     </label>
                   ))}
                 </div>
-                <p className="text-xs text-gray-600 mt-1">Keine Auswahl = nur für Admins sichtbar</p>
+                <p className="text-xs text-gray-400 mt-1">Keine Auswahl = nur für Admins sichtbar</p>
               </div>
             </>
           )}
 
           {error && (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+            <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
               {error}
             </div>
           )}
@@ -221,7 +221,7 @@ export default function UploadModal({ onClose, onUpload, progress }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
+                className="px-4 py-2.5 rounded-lg text-sm text-gray-500 hover:text-gray-900 transition-colors"
               >
                 Abbrechen
               </button>

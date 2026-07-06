@@ -69,7 +69,7 @@ export default function VideoGrid({ videos, onPlay, onDelete, onEdit, onBulkDele
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Videos durchsuchen…"
-            className="w-full pl-10 pr-3 py-2 rounded-lg bg-gray-900 border border-gray-800 text-white text-sm focus:border-brand-500 focus:outline-none transition-colors"
+            className="w-full pl-10 pr-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-sm focus:border-brand-500 focus:outline-none transition-colors"
           />
         </div>
 
@@ -78,7 +78,7 @@ export default function VideoGrid({ videos, onPlay, onDelete, onEdit, onBulkDele
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="pl-10 pr-8 py-2 rounded-lg bg-gray-900 border border-gray-800 text-white text-sm focus:border-brand-500 focus:outline-none transition-colors appearance-none cursor-pointer"
+            className="pl-10 pr-8 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-sm focus:border-brand-500 focus:outline-none transition-colors appearance-none cursor-pointer"
           >
             <option value="newest">Neueste zuerst</option>
             <option value="oldest">Älteste zuerst</option>
@@ -93,7 +93,7 @@ export default function VideoGrid({ videos, onPlay, onDelete, onEdit, onBulkDele
             className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               selectMode
                 ? 'bg-brand-600 text-white'
-                : 'bg-gray-900 border border-gray-800 text-gray-400 hover:text-white'
+                : 'bg-white border border-gray-300 text-gray-600 hover:text-gray-900'
             }`}
           >
             {selectMode ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
@@ -104,7 +104,7 @@ export default function VideoGrid({ videos, onPlay, onDelete, onEdit, onBulkDele
 
       {/* Bulk actions bar */}
       {selectMode && (
-        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-gray-900 border border-gray-800">
+        <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-white border border-gray-200">
           <span className="text-sm text-gray-400">
             {selected.size} ausgewählt
           </span>
@@ -125,7 +125,7 @@ export default function VideoGrid({ videos, onPlay, onDelete, onEdit, onBulkDele
           )}
           <button
             onClick={clearSelection}
-            className="ml-auto p-1.5 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+            className="ml-auto p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -134,7 +134,7 @@ export default function VideoGrid({ videos, onPlay, onDelete, onEdit, onBulkDele
 
       {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-gray-500">Keine Videos gefunden.</p>
+          <p className="text-gray-400">Keine Videos gefunden.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

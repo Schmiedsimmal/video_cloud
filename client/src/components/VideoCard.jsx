@@ -45,7 +45,7 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
   };
 
   return (
-    <div className="group relative rounded-xl overflow-hidden bg-gray-900 border border-gray-800 hover:border-gray-700 transition-all hover:shadow-2xl hover:shadow-black/40 animate-fade-in">
+    <div className="group relative rounded-xl overflow-hidden bg-white border border-gray-200 hover:border-gray-300 transition-all hover:shadow-lg hover:shadow-gray-200 animate-fade-in">
       {/* Thumbnail */}
       <div
         className={`relative aspect-video bg-gray-800 overflow-hidden ${selectMode ? 'cursor-pointer' : 'cursor-pointer'}`}
@@ -74,9 +74,9 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
           }}
         />
         {/* Play overlay */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
           <div className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
-            <Play className="w-6 h-6 text-gray-900 ml-0.5" fill="currentColor" />
+            <Play className="w-6 h-6 text-gray-700 ml-0.5" fill="currentColor" />
           </div>
         </div>
         {/* Duration badge */}
@@ -91,33 +91,33 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
       {/* Info */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-white text-sm leading-snug line-clamp-2 flex-1">
+          <h3 className="font-semibold text-gray-900 text-sm leading-snug line-clamp-2 flex-1">
             {video.title}
           </h3>
             {isAdmin && (
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
-                  className="p-1 rounded-lg hover:bg-gray-800 text-gray-400 hover:text-white transition-colors"
+                  className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-8 z-10 w-40 rounded-lg bg-gray-800 border border-gray-700 shadow-xl py-1">
+                  <div className="absolute right-0 top-8 z-20 w-40 rounded-lg bg-white border border-gray-200 shadow-xl py-1">
                     <button
                       onClick={() => {
                         setEditOpen(true);
                         setMenuOpen(false);
                         authFetch('/api/users').then(res => res.json()).then(setUsers).catch(() => {});
                       }}
-                      className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                     >
                       <Pencil className="w-3.5 h-3.5" />
                       Bearbeiten
                     </button>
                     <button
                       onClick={() => { onDelete(video.id); setMenuOpen(false); }}
-                      className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-sm text-red-500 hover:bg-gray-100 flex items-center gap-2"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Löschen
@@ -142,39 +142,39 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
       {/* Edit modal */}
       {editOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
           onClick={() => setEditOpen(false)}
         >
           <div
-            className="bg-gray-900 rounded-xl border border-gray-800 p-6 w-full max-w-md"
+            className="bg-white rounded-xl border border-gray-200 p-6 w-full max-w-md max-h-[90vh] overflow-y-auto scrollbar-thin"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-white mb-4">Video bearbeiten</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Video bearbeiten</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Titel</label>
+                <label className="block text-sm text-gray-600 mb-1">Titel</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none"
+                  className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:border-brand-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Beschreibung</label>
+                <label className="block text-sm text-gray-600 mb-1">Beschreibung</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows="3"
-                  className="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-white text-sm focus:border-brand-500 focus:outline-none resize-none"
+                  className="w-full px-3 py-2 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 text-sm focus:border-brand-500 focus:outline-none resize-none"
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1 flex items-center gap-1.5">
+                <label className="block text-sm text-gray-600 mb-1 flex items-center gap-1.5">
                   <Users className="w-4 h-4" />
                   Sichtbar für Nutzer
                 </label>
-                <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin rounded-lg bg-gray-800 border border-gray-700 p-3">
+                <div className="space-y-2 max-h-40 overflow-y-auto scrollbar-thin rounded-lg bg-gray-50 border border-gray-300 p-3">
                   {users.filter(u => u.role !== 'admin').length === 0 && (
                     <p className="text-xs text-gray-500">Keine Nutzer vorhanden.</p>
                   )}
@@ -189,7 +189,7 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
                         }}
                         className="w-4 h-4 rounded border-gray-600 bg-gray-700 text-brand-600 focus:ring-brand-500"
                       />
-                      <span className="text-sm text-gray-300">{u.name} <span className="text-gray-500">@{u.username}</span></span>
+                      <span className="text-sm text-gray-700">{u.name} <span className="text-gray-400">@{u.username}</span></span>
                     </label>
                   ))}
                 </div>
@@ -197,7 +197,7 @@ export default function VideoCard({ video, onPlay, onDelete, onEdit, getMediaUrl
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   onClick={() => setEditOpen(false)}
-                  className="px-4 py-2 rounded-lg text-sm text-gray-400 hover:text-white transition-colors"
+                  className="px-4 py-2 rounded-lg text-sm text-gray-500 hover:text-gray-900 transition-colors"
                 >
                   Abbrechen
                 </button>

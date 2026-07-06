@@ -14,6 +14,7 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 const GALLERIES_DIR = path.join(DATA_DIR, 'galleries');
 const META_FILE = path.join(DATA_DIR, 'metadata.json');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
+const DOWNLOADS_FILE = path.join(DATA_DIR, 'downloads.json');
 
 // Ensure base directories exist
 if (!fs.existsSync(GALLERIES_DIR)) fs.mkdirSync(GALLERIES_DIR, { recursive: true });
@@ -21,6 +22,11 @@ if (!fs.existsSync(GALLERIES_DIR)) fs.mkdirSync(GALLERIES_DIR, { recursive: true
 // Ensure metadata file exists
 if (!fs.existsSync(META_FILE)) {
   fs.writeFileSync(META_FILE, JSON.stringify([], null, 2));
+}
+
+// Ensure downloads file exists
+if (!fs.existsSync(DOWNLOADS_FILE)) {
+  fs.writeFileSync(DOWNLOADS_FILE, JSON.stringify([], null, 2));
 }
 
 // Ensure users file exists with default admin
@@ -52,6 +58,32 @@ app.use((req, res, next) => {
   res.setTimeout(0);
   next();
 });
+
+function loadDownloads() {
+  try {
+    return JSON.parse(fs.readFileSync(DOWNLOADS_FILE, 'utf-8'));
+  } catch {
+    return [];
+  }
+}
+
+function saveDownloads(downloads) {
+  fs.writeFileSync(DOWNLOADS_FILE, JSON.stringify(downloads, null, 2));
+}
+
+function logDownload(userId, username, filename, videoTitle) {
+  const downloads = loadDownloads();
+  downloads.push({
+    userId,
+    username,
+    filename,
+    videoTitle,
+    timestamp: new Date().toISOString(),
+  });
+  // Keep only last 500 entries
+  if (downloads.length > 500) downloads.splice(0, downloads.length - 500);
+  saveDownloads(downloads);
+}
 
 // --- Auth Helpers ---
 
@@ -362,6 +394,12 @@ app.delete('/api/users/:id', authMiddleware, adminOnly, (req, res) => {
   res.json({ success: true });
 });
 
+// --- Download history (admin only) ---
+app.get('/api/downloads', authMiddleware, adminOnly, (_req, res) => {
+  const downloads = loadDownloads();
+  res.json(downloads.reverse());
+});
+
 // --- Stats (admin only) ---
 app.get('/api/stats', authMiddleware, adminOnly, (_req, res) => {
   const meta = loadMetadata();
@@ -525,6 +563,7 @@ app.get('/api/download/:filename', authMiddleware, (req, res) => {
   const meta = loadMetadata();
   const entry = meta.find((v) => v.filename === req.params.filename);
   const downloadName = entry ? entry.title + path.extname(videoPath) : req.params.filename;
+  logDownload(req.user.id, req.user.username, req.params.filename, entry ? entry.title : req.params.filename);
   res.download(videoPath, downloadName);
 });
 

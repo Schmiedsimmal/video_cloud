@@ -125,8 +125,8 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
       </div>
     );
   }
@@ -136,7 +136,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950">
+    <div className="min-h-screen bg-gray-50">
       <Header
         user={user}
         videoCount={videos.length}
@@ -151,7 +151,7 @@ function AppContent() {
         {videoLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="rounded-xl overflow-hidden bg-gray-900 border border-gray-800">
+              <div key={i} className="rounded-xl overflow-hidden bg-white border border-gray-200">
                 <div className="aspect-video shimmer" />
                 <div className="p-4 space-y-2">
                   <div className="h-4 w-3/4 rounded shimmer" />
@@ -201,7 +201,7 @@ function AppContent() {
         <ChangePasswordModal onClose={() => setPasswordChangeOpen(false)} />
       )}
 
-      <footer className="border-t border-gray-800 mt-12">
+      <footer className="border-t border-gray-200 mt-12">
         <div className="max-w-7xl mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-4 text-sm text-gray-500">
           <span className="flex items-center gap-2">
             <Film className="w-4 h-4" />
