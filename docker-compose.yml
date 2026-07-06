@@ -5,8 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: video-cloud
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     volumes:
       - video-data:/app/data
     environment:
@@ -15,5 +15,21 @@ services:
       - DATA_DIR=/app/data
     restart: always
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - video-cloud
+    restart: always
+
 volumes:
   video-data:
+  caddy_data:
+  caddy_config:
