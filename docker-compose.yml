@@ -8,7 +8,7 @@ services:
     expose:
       - "3000"
     volumes:
-      - video-data:/app/data
+      - /mnt/usb:/app/data
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -30,6 +30,5 @@ services:
     restart: always
 
 volumes:
-  video-data:
   caddy_data:
   caddy_config:
